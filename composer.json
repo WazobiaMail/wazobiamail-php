@@ -1,0 +1,54 @@
+{
+    "name": "wazobiamail/wazobiamail-php",
+    "version": "0.1.0",
+    "description": "Official WazobiaMail PHP SDK for transactional email, domain management, hosted mailboxes, and enterprise inbox automation.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bowofade Oyerinde",
+            "email": "info@bonifadetechnologies.com",
+            "homepage": "https://bonifadetechnologies.com"
+        }
+    ],
+    "homepage": "https://wazobiamail.com",
+    "support": {
+        "issues": "https://github.com/WazobiaMail/wazobiamail-php/issues",
+        "source": "https://github.com/WazobiaMail/wazobiamail-php"
+    },
+    "keywords": [
+        "wazobiamail",
+        "email",
+        "smtp",
+        "mailboxes",
+        "inbox",
+        "sdk",
+        "api"
+    ],
+    "require": {
+        "php": "^8.1 || ^8.2 || ^8.3 || ^8.4 || ^8.5",
+        "guzzlehttp/guzzle": "^7.5",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0 || ^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WazobiaMail\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WazobiaMail\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    }
+}
