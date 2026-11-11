@@ -1,6 +1,5 @@
 {
     "name": "wazobiamail/wazobiamail-php",
-    "version": "0.1.0",
     "description": "Official WazobiaMail PHP SDK for transactional email, domain management, hosted mailboxes, and enterprise inbox automation.",
     "type": "library",
     "license": "MIT",

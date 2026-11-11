@@ -130,7 +130,7 @@ class Domains extends AbstractResource
      */
     public function connectCloudflare(): array
     {
-        $response = $this->http->post('/sending/domains/cloudflare/connect');
+        $response = $this->http->get('/sending/domains/cloudflare/connect');
         return $response->getData() ?? [];
     }
 

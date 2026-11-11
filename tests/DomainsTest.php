@@ -57,4 +57,18 @@ class DomainsTest extends TestCase
         $body = json_decode((string) $request->getBody(), true);
         $this->assertTrue($body['force']);
     }
+
+    public function testCloudflareConnectUsesGet(): void
+    {
+        $client = $this->createMockClient([
+            $this->jsonResponse(200, ['success' => true, 'data' => ['authUrl' => 'https://cloudflare.com/oauth']]),
+        ]);
+
+        $result = $client->domains()->connectCloudflare();
+        $this->assertSame('https://cloudflare.com/oauth', $result['authUrl']);
+
+        $request = $this->getLastRequest();
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame('/api/v1/sending/domains/cloudflare/connect', $request->getUri()->getPath());
+    }
 }
