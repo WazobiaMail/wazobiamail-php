@@ -1,6 +1,6 @@
 {
     "name": "wazobiamail/wazobiamail-php",
-    "description": "Official WazobiaMail PHP SDK for transactional email, domain management, hosted mailboxes, and enterprise inbox automation.",
+    "description": "Official PHP SDK for WazobiaMail transactional email via API. WazobiaMail is a Resend alternative that also supports SMTP, with domains, hosted mailboxes, and deliverability tools.",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -22,7 +22,9 @@
         "mailboxes",
         "inbox",
         "sdk",
-        "api"
+        "api",
+        "resend-alternative",
+        "email-api"
     ],
     "require": {
         "php": "^8.1 || ^8.2 || ^8.3 || ^8.4 || ^8.5",
