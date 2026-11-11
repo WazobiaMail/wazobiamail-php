@@ -11,7 +11,7 @@ class Configuration
 {
     public const DEFAULT_BASE_URL = 'https://app.wazobiamail.com/api/v1';
     public const DEFAULT_TIMEOUT = 30.0;
-    public const VERSION = '0.1.1';
+    public const VERSION = '0.1.2';
 
     protected string $apiKey;
     protected string $baseUrl;
