@@ -23,8 +23,17 @@ class Webhooks
             return false;
         }
 
+        $normalized = strtolower(trim($signature));
+        if (str_starts_with($normalized, 'sha256=')) {
+            $normalized = substr($normalized, 7);
+        }
+
+        if ($normalized === '' || !ctype_xdigit($normalized)) {
+            return false;
+        }
+
         $expectedSignature = hash_hmac('sha256', $payload, $secret);
-        return hash_equals($expectedSignature, $signature);
+        return hash_equals($expectedSignature, $normalized);
     }
 
     /**

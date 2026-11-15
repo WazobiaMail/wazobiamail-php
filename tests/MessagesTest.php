@@ -133,4 +133,37 @@ class MessagesTest extends TestCase
         $request = $this->getLastRequest();
         $this->assertSame('/api/v1/sending/spam-check', $request->getUri()->getPath());
     }
+
+    public function testUploadAttachmentSanitizesFilename(): void
+    {
+        $expectedFile = [
+            'key' => 'att_123',
+            'fileName' => 'invoice_1.pdf',
+            'contentType' => 'application/pdf',
+            'sizeBytes' => 11,
+            'publicUrl' => 'https://cdn.wazobiamail.com/att_123',
+        ];
+
+        $client = $this->createMockClient([
+            $this->jsonResponse(200, [
+                'success' => true,
+                'data' => ['file' => $expectedFile],
+            ]),
+        ]);
+
+        $res = $client->messages()->uploadAttachment('PDF-CONTENT', '../invoice"1.pdf', 'application/pdf');
+        $this->assertSame($expectedFile, $res['file']);
+
+        $request = $this->getLastRequest();
+        $this->assertSame('/api/v1/sending/attachments/upload', $request->getUri()->getPath());
+        $body = (string) $request->getBody();
+        $this->assertStringContainsString('name="file"; filename=".._invoice_1.pdf"', $body);
+        $this->assertStringContainsString('PDF-CONTENT', $body);
+    }
+
+    public function testUnsafeBaseUrlThrowsValidationException(): void
+    {
+        $this->expectException(\WazobiaMail\Exceptions\ValidationException::class);
+        new \WazobiaMail\WazobiaMailClient(['apiKey' => 'wzbm_dummy', 'baseUrl' => 'javascript:alert(1)']);
+    }
 }

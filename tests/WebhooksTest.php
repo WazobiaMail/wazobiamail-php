@@ -48,4 +48,14 @@ class WebhooksTest extends TestCase
         $this->expectException(AuthenticationException::class);
         $client->webhooks()->constructEvent($payload, 'bad_sig', 'secret');
     }
+
+    public function testVerifySignatureAcceptsSha256Prefix(): void
+    {
+        $client = new WazobiaMailClient('wzbm_dummy_key');
+        $payload = '{"event":"email.delivered"}';
+        $secret = 'whsec_test_secret_key';
+        $signature = 'sha256=' . strtoupper(hash_hmac('sha256', $payload, $secret));
+
+        $this->assertTrue($client->webhooks()->verifySignature($payload, $signature, $secret));
+    }
 }

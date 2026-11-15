@@ -108,6 +108,11 @@ class HttpClient
     {
         $normalizedPath = ltrim($path, '/');
         $headers = array_merge($this->defaultHeaders(), $options['headers'] ?? []);
+        foreach ($headers as $name => $value) {
+            if (preg_match('/[\r\n\0:]/', (string) $name) === 1 || preg_match('/[\r\n\0]/', (string) $value) === 1) {
+                throw new ValidationException(sprintf('Header "%s" contains illegal control characters.', (string) $name));
+            }
+        }
         $options['headers'] = $headers;
 
         try {

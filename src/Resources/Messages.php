@@ -93,6 +93,56 @@ class Messages extends AbstractResource
     }
 
     /**
+     * Upload an attachment file to CDN storage for reuse in messages.
+     *
+     * Accepts either a normalized descriptor array (`path`, `contents`, or base64 `content`
+     * alongside optional `filename`/`contentType`) or raw binary string contents.
+     *
+     * @param array<string, mixed>|string $file
+     * @param string|null $filename
+     * @param string|null $contentType
+     * @param string|null $idempotencyKey
+     * @return array
+     * @throws WazobiaException
+     */
+    public function uploadAttachment(
+        array|string $file,
+        ?string $filename = null,
+        ?string $contentType = null,
+        ?string $idempotencyKey = null
+    ): array {
+        $descriptor = is_string($file)
+            ? [
+                'contents' => $file,
+                'filename' => $filename ?? 'attachment.dat',
+                'contentType' => $contentType ?? 'application/octet-stream',
+            ]
+            : $file;
+
+        if (is_array($file)) {
+            if ($filename !== null && !isset($descriptor['filename'])) {
+                $descriptor['filename'] = $filename;
+            }
+            if ($contentType !== null && !isset($descriptor['contentType'])) {
+                $descriptor['contentType'] = $contentType;
+            }
+        }
+
+        $normalized = $this->normalizeFile($descriptor);
+        $multipart = [
+            $this->buildMultipartFilePart('file', $normalized),
+        ];
+
+        $headers = [];
+        if ($idempotencyKey !== null && $idempotencyKey !== '') {
+            $headers['Idempotency-Key'] = $idempotencyKey;
+        }
+
+        $response = $this->http->postMultipart('/sending/attachments/upload', $multipart, $headers);
+        return $response->getData() ?? [];
+    }
+
+    /**
      * Check spam and deliverability score before sending.
      *
      * @param array{
@@ -234,8 +284,8 @@ class Messages extends AbstractResource
      */
     protected function normalizeFile(array $file): array
     {
-        $name = (string) ($file['filename'] ?? $file['fileName'] ?? $file['name'] ?? 'attachment');
-        $type = (string) ($file['contentType'] ?? $file['content_type'] ?? 'application/octet-stream');
+        $rawName = (string) ($file['filename'] ?? $file['fileName'] ?? $file['name'] ?? 'attachment.dat');
+        $rawType = (string) ($file['contentType'] ?? $file['content_type'] ?? 'application/octet-stream');
 
         if (isset($file['contents']) && is_string($file['contents'])) {
             $contents = $file['contents'];
@@ -252,8 +302,8 @@ class Messages extends AbstractResource
             if ($contents === false) {
                 throw new ValidationException(sprintf('Unable to read attachment: %s', $file['path']));
             }
-            if (!isset($file['filename'])) {
-                $name = basename($file['path']);
+            if (!isset($file['filename']) && !isset($file['fileName'])) {
+                $rawName = basename($file['path']);
             }
         } else {
             throw new ValidationException('Attachment must contain a path, contents, or base64 content');
@@ -263,7 +313,31 @@ class Messages extends AbstractResource
             throw new ValidationException('Attachment content must not be empty');
         }
 
+        $name = trim((string) preg_replace('/[\r\n\0"\\\\\/]+/', '_', $rawName));
+        if ($name === '') {
+            $name = 'attachment.dat';
+        }
+
+        $type = trim((string) preg_replace('/[\r\n\0]+/', '', $rawType));
+        if ($type === '') {
+            $type = 'application/octet-stream';
+        }
+
         return ['contents' => $contents, 'filename' => $name, 'contentType' => $type];
+    }
+
+    /**
+     * @param array{contents: string, filename: string, contentType: string} $file
+     * @return array<string, mixed>
+     */
+    protected function buildMultipartFilePart(string $fieldName, array $file): array
+    {
+        return [
+            'name' => $fieldName,
+            'contents' => $file['contents'],
+            'filename' => $file['filename'],
+            'headers' => ['Content-Type' => $file['contentType']],
+        ];
     }
 
     /**
@@ -284,12 +358,7 @@ class Messages extends AbstractResource
         ];
 
         foreach ($files as $file) {
-            $multipart[] = [
-                'name' => 'files',
-                'contents' => $file['contents'],
-                'filename' => $file['filename'],
-                'headers' => ['Content-Type' => $file['contentType']],
-            ];
+            $multipart[] = $this->buildMultipartFilePart('files', $file);
         }
 
         $headers = [];

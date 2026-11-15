@@ -6,12 +6,13 @@ namespace WazobiaMail;
 
 use GuzzleHttp\ClientInterface;
 use WazobiaMail\Exceptions\AuthenticationException;
+use WazobiaMail\Exceptions\ValidationException;
 
 class Configuration
 {
     public const DEFAULT_BASE_URL = 'https://app.wazobiamail.com/api/v1';
     public const DEFAULT_TIMEOUT = 30.0;
-    public const VERSION = '0.1.2';
+    public const VERSION = '0.1.3';
 
     protected string $apiKey;
     protected string $baseUrl;
@@ -42,11 +43,41 @@ class Configuration
             );
         }
 
-        $this->apiKey = trim($apiKey);
-        $baseUrl = $config['baseUrl'] ?? $config['base_url'] ?? self::DEFAULT_BASE_URL;
+        $apiKey = trim($apiKey);
+        if (preg_match('/[\r\n\0]/', $apiKey) === 1) {
+            throw new AuthenticationException('WazobiaMail API key contains illegal control characters.');
+        }
+
+        $this->apiKey = $apiKey;
+        $baseUrl = trim((string) ($config['baseUrl'] ?? $config['base_url'] ?? self::DEFAULT_BASE_URL));
+        if (
+            preg_match('/[\r\n\0]/', $baseUrl) === 1
+            || (!str_starts_with($baseUrl, 'https://') && !str_starts_with($baseUrl, 'http://'))
+        ) {
+            throw new ValidationException('baseUrl must start with http:// or https:// without control characters.');
+        }
+
         $this->baseUrl = rtrim($baseUrl, '/') . '/';
         $this->timeout = (float) ($config['timeout'] ?? self::DEFAULT_TIMEOUT);
         $this->customClient = $config['client'] ?? null;
+    }
+
+    /**
+     * Mask sensitive credentials if Configuration is dumped or logged.
+     *
+     * @return array<string, mixed>
+     */
+    public function __debugInfo(): array
+    {
+        $masked = strlen($this->apiKey) <= 8
+            ? '***'
+            : substr($this->apiKey, 0, 5) . '...' . substr($this->apiKey, -4);
+
+        return [
+            'apiKey' => $masked,
+            'baseUrl' => $this->baseUrl,
+            'timeout' => $this->timeout,
+        ];
     }
 
     protected function resolveApiKeyFromEnvironment(): ?string
